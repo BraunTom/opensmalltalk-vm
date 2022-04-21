@@ -17,6 +17,7 @@ DESPlugin \
 MD5Plugin \
 SHA2Plugin \
 VectorEnginePlugin \
+RiscVPlugin \
 # Not working because of deprecated functionality \
 # Not working because no 64-bit QuickTime \
 # MIDIPlugin \
