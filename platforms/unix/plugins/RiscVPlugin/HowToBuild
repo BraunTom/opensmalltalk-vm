@@ -1,0 +1,12 @@
+Building the BochsX64Plugin
+------------------------------
+
+Building on Linux and Mac OS X
+------------------------------
+`cd` to the `../../../../processors/riscv_em` directory.
+
+Then run:
+``` bash
+mkdir build && cd build
+cmake .. && cmake --build .
+```

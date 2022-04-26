@@ -641,16 +641,15 @@ int_plugins
 UNICODE_PLUGIN_LIBS
 UNICODE_PLUGIN_CFLAGS
 IA32ABI_OBJS
-LIBM_CFLAGS
 FT2_PLUGIN_LIBS
 FT2_PLUGIN_CFLAGS
 PKG_CONFIG_LIBDIR
 PKG_CONFIG_PATH
 PKG_CONFIG
+LIBM_CFLAGS
 ARM_ARCH
 BITBLT_FLAGS
 BITBLT_OBJS
-HAVE_LANGINFO_CODESET
 VM_DISPX11_BITBLT_FLAGS
 VM_DISPX11_OBJS
 X_INCLUDES
@@ -660,6 +659,7 @@ X_LIBS
 X_PRE_LIBS
 X_CFLAGS
 XMKMF
+HAVE_LANGINFO_CODESET
 ext_modules
 int_modules
 SQ_LIBDIR
@@ -820,15 +820,15 @@ with_rfb
 enable_largefile
 enable_epoll
 with_npsqueak
+enable_iconv
+with_custom_display
+with_vm_display_fbdev
 with_quartz
 with_x
 with_gl
 enable_fast_bitblt
-with_custom_display
-with_vm_display_fbdev
-with_vm_sound_OSS
 with_custom_sound
-enable_iconv
+with_vm_sound_OSS
 enable_mpg_mmx
 enable_mpg_pthreads
 enable_dynamicopenssl
@@ -1491,9 +1491,9 @@ Optional Features:
   --disable-largefile     omit support for large files
   --disable-epoll         Do not use epoll even if supported (default: try to
                           use)
-  --enable-fast-bitblt    enable fast BitBlt optimizations (default=no)
   --disable-iconv disable iconv support (default=enabled)
 
+  --enable-fast-bitblt    enable fast BitBlt optimizations (default=no)
   --enable-fast-bitblt enable fast BitBlt optimizations (default=no)
   --enable-mpg-mmx        enable MMX support in Mpeg3Plugin default=no
   --enable-mpg-pthreads   enable pthread support in Mpeg3Plugin default=no
@@ -1524,15 +1524,15 @@ Optional Packages:
    --with-gnu-as          assume that as is the GNU assembler (default=no)
    --without-rfb          disable Remote FrameBuffer support (default=enabled)
    --without-npsqueak     disable browser plugin support (default=enabled)
+  --with-custom-display   enable custom window support default=disabled
+  --without-vm-display-fbdev      disable frame buffer vm display support default=enabled
   --without-quartz        disable MacOSX Window System support
                           (default=enabled)
   --without-x             disable X Window System support (default=enabled)
   --without-gl            disable OpenGL support (default=enabled)
   --with-x                use the X Window System
-  --with-custom-display   enable custom window support default=disabled
-  --without-vm-display-fbdev      disable frame buffer vm display support default=enabled
-  --without-vm-sound-OSS  disable OSS vm sound support (default=enabled)
   --with-custom-sound     enable custom sound support default=disabled
+  --without-vm-sound-OSS  disable OSS vm sound support (default=enabled)
   --with-libtls           Use libtls instead of OpenSSL unconditionally
 
 Some influential environment variables:
@@ -5158,7 +5158,7 @@ linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)
   lt_cv_deplibs_check_method=pass_all
   ;;
 
-netbsd* | netbsdelf*-gnu)
+netbsd*)
   if echo __ELF__ | $CC -E - | $GREP __ELF__ > /dev/null; then
     lt_cv_deplibs_check_method='match_pattern /lib[^/]+(\.so\.[0-9]+\.[0-9]+|_pic\.a)$'
   else
@@ -6063,8 +6063,11 @@ _LT_EOF
   test $ac_status = 0; }; then
     # Now try to grab the symbols.
     nlist=conftest.nm
-    $ECHO "$as_me:$LINENO: $NM conftest.$ac_objext | $lt_cv_sys_global_symbol_pipe > $nlist" >&5
-    if eval "$NM" conftest.$ac_objext \| "$lt_cv_sys_global_symbol_pipe" \> $nlist 2>&5 && test -s "$nlist"; then
+    if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$NM conftest.$ac_objext \| "$lt_cv_sys_global_symbol_pipe" \> $nlist\""; } >&5
+  (eval $NM conftest.$ac_objext \| "$lt_cv_sys_global_symbol_pipe" \> $nlist) 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; } && test -s "$nlist"; then
       # Try sorting and uniquifying the output.
       if sort "$nlist" | uniq > "$nlist"T; then
 	mv -f "$nlist"T "$nlist"
@@ -8616,9 +8619,6 @@ $as_echo_n "checking whether the $compiler linker ($LD) supports shared librarie
   openbsd* | bitrig*)
     with_gnu_ld=no
     ;;
-  linux* | k*bsd*-gnu | gnu*)
-    link_all_deplibs=no
-    ;;
   esac
 
   ld_shlibs=yes
@@ -8873,7 +8873,7 @@ _LT_EOF
       fi
       ;;
 
-    netbsd* | netbsdelf*-gnu)
+    netbsd*)
       if echo __ELF__ | $CC -E - | $GREP __ELF__ >/dev/null; then
 	archive_cmds='$LD -Bshareable $libobjs $deplibs $linker_flags -o $lib'
 	wlarc=
@@ -9543,7 +9543,6 @@ $as_echo "$lt_cv_irix_exported_symbol" >&6; }
 	if test yes = "$lt_cv_irix_exported_symbol"; then
           archive_expsym_cmds='$CC -shared $pic_flag $libobjs $deplibs $compiler_flags $wl-soname $wl$soname `test -n "$verstring" && func_echo_all "$wl-set_version $wl$verstring"` $wl-update_registry $wl$output_objdir/so_locations $wl-exports_file $wl$export_symbols -o $lib'
 	fi
-	link_all_deplibs=no
       else
 	archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags -soname $soname `test -n "$verstring" && func_echo_all "-set_version $verstring"` -update_registry $output_objdir/so_locations -o $lib'
 	archive_expsym_cmds='$CC -shared $libobjs $deplibs $compiler_flags -soname $soname `test -n "$verstring" && func_echo_all "-set_version $verstring"` -update_registry $output_objdir/so_locations -exports_file $export_symbols -o $lib'
@@ -9565,7 +9564,7 @@ $as_echo "$lt_cv_irix_exported_symbol" >&6; }
       esac
       ;;
 
-    netbsd* | netbsdelf*-gnu)
+    netbsd*)
       if echo __ELF__ | $CC -E - | $GREP __ELF__ >/dev/null; then
 	archive_cmds='$LD -Bshareable -o $lib $libobjs $deplibs $linker_flags'  # a.out
       else
@@ -10660,6 +10659,9 @@ fi
   # before this can be enabled.
   hardcode_into_libs=yes
 
+  # Add ABI-specific directories to the system library path.
+  sys_lib_dlsearch_path_spec="/lib64 /usr/lib64 /lib /usr/lib"
+
   # Ideally, we could use ldconfig to report *all* directores which are
   # searched for libraries, however this is still not possible.  Aside from not
   # being certain /sbin/ldconfig is available, command
@@ -10668,7 +10670,7 @@ fi
   # appending ld.so.conf contents (and includes) to the search path.
   if test -f /etc/ld.so.conf; then
     lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
-    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
+    sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -10678,18 +10680,6 @@ fi
   # people can always --disable-shared, the test was removed, and we
   # assume the GNU/Linux dynamic linker is in use.
   dynamic_linker='GNU/Linux ld.so'
-  ;;
-
-netbsdelf*-gnu)
-  version_type=linux
-  need_lib_prefix=no
-  need_version=no
-  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major ${libname}${shared_ext}'
-  soname_spec='${libname}${release}${shared_ext}$major'
-  shlibpath_var=LD_LIBRARY_PATH
-  shlibpath_overrides_runpath=no
-  hardcode_into_libs=yes
-  dynamic_linker='NetBSD ld.elf_so'
   ;;
 
 netbsd*)
@@ -15151,7 +15141,7 @@ else
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
+#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -15197,7 +15187,7 @@ else
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
+#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -15221,7 +15211,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
+#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -15266,7 +15256,7 @@ else
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
+#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -15290,7 +15280,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
+#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -16454,6 +16444,298 @@ ext_modules="`cd ${topdir}/platforms/unix; echo vm-*`"
 
 disabled_plugins=""
 rm -f plugins.exc
+plugin="vm"
+plibs=""
+rm -f vm.sub vm.lib
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for nl_langinfo and CODESET" >&5
+$as_echo_n "checking for nl_langinfo and CODESET... " >&6; }
+if ${ac_cv_langinfo_codeset+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <langinfo.h>
+int
+main ()
+{
+char *cs= nl_langinfo(CODESET);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_langinfo_codeset=yes
+else
+  ac_cv_langinfo_codeset=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_langinfo_codeset" >&5
+$as_echo "$ac_cv_langinfo_codeset" >&6; }
+  if test $ac_cv_langinfo_codeset = yes; then
+
+$as_echo "#define HAVE_LANGINFO_CODESET 1" >>confdefs.h
+
+  fi
+
+
+
+case $host_os in
+  darwin*) LIBS="$LIBS -framework CoreFoundation -framework CoreServices";;
+  *)
+    # Check whether --enable-iconv was given.
+if test "${enable_iconv+set}" = set; then :
+  enableval=$enable_iconv; with_iconv="$enableval"
+else
+  with_iconv="yes"
+fi
+
+    if test "$with_iconv" = "yes"; then
+      for ac_header in iconv.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "iconv.h" "ac_cv_header_iconv_h" "$ac_includes_default"
+if test "x$ac_cv_header_iconv_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_ICONV_H 1
+_ACEOF
+
+fi
+
+done
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing iconv_open" >&5
+$as_echo_n "checking for library containing iconv_open... " >&6; }
+if ${ac_cv_search_iconv_open+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char iconv_open ();
+int
+main ()
+{
+return iconv_open ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' iconv; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_iconv_open=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_iconv_open+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_iconv_open+:} false; then :
+
+else
+  ac_cv_search_iconv_open=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_iconv_open" >&5
+$as_echo "$ac_cv_search_iconv_open" >&6; }
+ac_res=$ac_cv_search_iconv_open
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+else
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing libiconv_open" >&5
+$as_echo_n "checking for library containing libiconv_open... " >&6; }
+if ${ac_cv_search_libiconv_open+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char libiconv_open ();
+int
+main ()
+{
+return libiconv_open ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' iconv; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_libiconv_open=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_libiconv_open+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_libiconv_open+:} false; then :
+
+else
+  ac_cv_search_libiconv_open=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_libiconv_open" >&5
+$as_echo "$ac_cv_search_libiconv_open" >&6; }
+ac_res=$ac_cv_search_libiconv_open
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+fi
+
+fi
+
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling iconv" >&5
+$as_echo "******** disabling iconv" >&6; }
+    fi
+    ;;
+esac
+
+if test "${plibs}"; then
+  llibs="${LIBS}"
+  for l in ${plibs}; do
+  llibs="${llibs} -l${l}"
+  done
+  echo ${llibs} > ${plugin}.lib
+fi
+plugin="vm-display-custom"
+plibs=""
+rm -f vm-display-custom.sub vm-display-custom.lib
+# -*- sh -*-
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for custom display support" >&5
+$as_echo_n "checking for custom display support... " >&6; }
+
+
+# Check whether --with-custom-display was given.
+if test "${with_custom_display+set}" = set; then :
+  withval=$with_custom_display; have_dpy_custom="$withval"
+else
+  have_dpy_custom="no"
+fi
+
+
+if test "$have_dpy_custom" = "yes"; then
+  # check for libraries, headers, etc., here...
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling ${plugin}" >&5
+$as_echo "******** disabling ${plugin}" >&6; }
+  disabled_plugins="${disabled_plugins} ${plugin}"
+fi
+if test "${plibs}"; then
+  llibs="${LIBS}"
+  for l in ${plibs}; do
+  llibs="${llibs} -l${l}"
+  done
+  echo ${llibs} > ${plugin}.lib
+fi
+plugin="vm-display-fbdev"
+plibs=""
+rm -f vm-display-fbdev.sub vm-display-fbdev.lib
+# -*- sh -*-
+
+
+# Check whether --with-vm-display-fbdev was given.
+if test "${with_vm_display_fbdev+set}" = set; then :
+  withval=$with_vm_display_fbdev; with_vm_display_fbdev="$withval"
+else
+  with_vm_display_fbdev="yes"
+fi
+
+if test "$with_vm_display_fbdev" = "no"; then
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling vm-display-fbdev" >&5
+$as_echo "******** disabling vm-display-fbdev" >&6; }
+  disabled_plugins="${disabled_plugins} vm-display-fbdev";
+else
+	for ac_header in linux/fb.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "linux/fb.h" "ac_cv_header_linux_fb_h" "$ac_includes_default"
+if test "x$ac_cv_header_linux_fb_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LINUX_FB_H 1
+_ACEOF
+
+else
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling ${plugin}" >&5
+$as_echo "******** disabling ${plugin}" >&6; }
+  disabled_plugins="${disabled_plugins} ${plugin}"
+fi
+
+done
+
+	for ac_header in libevdev-1.0/libevdev/libevdev.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "libevdev-1.0/libevdev/libevdev.h" "ac_cv_header_libevdev_1_0_libevdev_libevdev_h" "$ac_includes_default"
+if test "x$ac_cv_header_libevdev_1_0_libevdev_libevdev_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBEVDEV_1_0_LIBEVDEV_LIBEVDEV_H 1
+_ACEOF
+
+else
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling ${plugin}" >&5
+$as_echo "******** disabling ${plugin}" >&6; }
+  disabled_plugins="${disabled_plugins} ${plugin}"
+fi
+
+done
+
+fi
+if test "${plibs}"; then
+  llibs="${LIBS}"
+  for l in ${plibs}; do
+  llibs="${llibs} -l${l}"
+  done
+  echo ${llibs} > ${plugin}.lib
+fi
 plugin="vm-display-Quartz"
 plibs=""
 rm -f vm-display-Quartz.sub vm-display-Quartz.lib
@@ -17575,106 +17857,6 @@ if test "${plibs}"; then
   done
   echo ${llibs} > ${plugin}.lib
 fi
-plugin="vm-display-custom"
-plibs=""
-rm -f vm-display-custom.sub vm-display-custom.lib
-# -*- sh -*-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for custom display support" >&5
-$as_echo_n "checking for custom display support... " >&6; }
-
-
-# Check whether --with-custom-display was given.
-if test "${with_custom_display+set}" = set; then :
-  withval=$with_custom_display; have_dpy_custom="$withval"
-else
-  have_dpy_custom="no"
-fi
-
-
-if test "$have_dpy_custom" = "yes"; then
-  # check for libraries, headers, etc., here...
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling ${plugin}" >&5
-$as_echo "******** disabling ${plugin}" >&6; }
-  disabled_plugins="${disabled_plugins} ${plugin}"
-fi
-if test "${plibs}"; then
-  llibs="${LIBS}"
-  for l in ${plibs}; do
-  llibs="${llibs} -l${l}"
-  done
-  echo ${llibs} > ${plugin}.lib
-fi
-plugin="vm-display-fbdev"
-plibs=""
-rm -f vm-display-fbdev.sub vm-display-fbdev.lib
-# -*- sh -*-
-
-
-# Check whether --with-vm-display-fbdev was given.
-if test "${with_vm_display_fbdev+set}" = set; then :
-  withval=$with_vm_display_fbdev; with_vm_display_fbdev="$withval"
-else
-  with_vm_display_fbdev="yes"
-fi
-
-if test "$with_vm_display_fbdev" = "no"; then
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling vm-display-fbdev" >&5
-$as_echo "******** disabling vm-display-fbdev" >&6; }
-  disabled_plugins="${disabled_plugins} vm-display-fbdev";
-else
-	for ac_header in linux/fb.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "linux/fb.h" "ac_cv_header_linux_fb_h" "$ac_includes_default"
-if test "x$ac_cv_header_linux_fb_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LINUX_FB_H 1
-_ACEOF
-
-else
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling ${plugin}" >&5
-$as_echo "******** disabling ${plugin}" >&6; }
-  disabled_plugins="${disabled_plugins} ${plugin}"
-fi
-
-done
-
-	for ac_header in libevdev-1.0/libevdev/libevdev.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "libevdev-1.0/libevdev/libevdev.h" "ac_cv_header_libevdev_1_0_libevdev_libevdev_h" "$ac_includes_default"
-if test "x$ac_cv_header_libevdev_1_0_libevdev_libevdev_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBEVDEV_1_0_LIBEVDEV_LIBEVDEV_H 1
-_ACEOF
-
-else
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling ${plugin}" >&5
-$as_echo "******** disabling ${plugin}" >&6; }
-  disabled_plugins="${disabled_plugins} ${plugin}"
-fi
-
-done
-
-fi
-if test "${plibs}"; then
-  llibs="${LIBS}"
-  for l in ${plibs}; do
-  llibs="${llibs} -l${l}"
-  done
-  echo ${llibs} > ${plugin}.lib
-fi
 plugin="vm-sound-ALSA"
 plibs=""
 rm -f vm-sound-ALSA.sub vm-sound-ALSA.lib
@@ -17769,6 +17951,43 @@ $as_echo "******** disabling ${plugin} due to missing libraries" >&6; }
 fi
 
   LIBS="$save_LIBS"
+if test "${plibs}"; then
+  llibs="${LIBS}"
+  for l in ${plibs}; do
+  llibs="${llibs} -l${l}"
+  done
+  echo ${llibs} > ${plugin}.lib
+fi
+plugin="vm-sound-custom"
+plibs=""
+rm -f vm-sound-custom.sub vm-sound-custom.lib
+# -*- sh -*-
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for custom sound support" >&5
+$as_echo_n "checking for custom sound support... " >&6; }
+
+
+# Check whether --with-custom-sound was given.
+if test "${with_custom_sound+set}" = set; then :
+  withval=$with_custom_sound; have_snd_custom="$withval"
+else
+  have_snd_custom="no"
+fi
+
+
+if test "$have_snd_custom" = "yes"; then
+  # check for libraries, headers, etc., here...
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling ${plugin}" >&5
+$as_echo "******** disabling ${plugin}" >&6; }
+  disabled_plugins="${disabled_plugins} ${plugin}"
+fi
 if test "${plibs}"; then
   llibs="${LIBS}"
   for l in ${plibs}; do
@@ -17919,6 +18138,27 @@ if test "${plibs}"; then
   done
   echo ${llibs} > ${plugin}.lib
 fi
+plugin="vm-sound-null"
+plibs=""
+rm -f vm-sound-null.sub vm-sound-null.lib
+# -*- sh -*-
+# empty to provoke config/mkacinc into including vm-sound-null for consideration
+
+#AC_ARG_WITH(vm-sound-null,
+#[  --without-vm-sound-null      disable null vm sound support [default=enabled]],
+#  [with_vm_sound_null="$withval"],
+#  [with_vm_sound_null="yes"])
+#if test "$with_vm_sound_null" = "no"; then
+#	AC_PLUGIN_DISABLE_PLUGIN(vm-sound-null);
+#fi
+
+if test "${plibs}"; then
+  llibs="${LIBS}"
+  for l in ${plibs}; do
+  llibs="${llibs} -l${l}"
+  done
+  echo ${llibs} > ${plugin}.lib
+fi
 plugin="vm-sound-OSS"
 plibs=""
 rm -f vm-sound-OSS.sub vm-sound-OSS.lib
@@ -18005,137 +18245,6 @@ fi
 
   fi
 fi
-if test "${plibs}"; then
-  llibs="${LIBS}"
-  for l in ${plibs}; do
-  llibs="${llibs} -l${l}"
-  done
-  echo ${llibs} > ${plugin}.lib
-fi
-plugin="vm-sound-Sun"
-plibs=""
-rm -f vm-sound-Sun.sub vm-sound-Sun.lib
-# -*- sh -*-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SunOS/Solaris audio" >&5
-$as_echo_n "checking for SunOS/Solaris audio... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/audioio.h>
-int
-main ()
-{
-AUDIO_SUNVTS;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_SYS_AUDIOIO_H 1
-_ACEOF
-
-
-else
-
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sun/audioio.h>
-int
-main ()
-{
-AUDIO_SUNVTS;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_SUN_AUDIOIO_H 1
-_ACEOF
-
-
-else
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling ${plugin}" >&5
-$as_echo "******** disabling ${plugin}" >&6; }
-  disabled_plugins="${disabled_plugins} ${plugin}"
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-if test "${plibs}"; then
-  llibs="${LIBS}"
-  for l in ${plibs}; do
-  llibs="${llibs} -l${l}"
-  done
-  echo ${llibs} > ${plugin}.lib
-fi
-plugin="vm-sound-custom"
-plibs=""
-rm -f vm-sound-custom.sub vm-sound-custom.lib
-# -*- sh -*-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for custom sound support" >&5
-$as_echo_n "checking for custom sound support... " >&6; }
-
-
-# Check whether --with-custom-sound was given.
-if test "${with_custom_sound+set}" = set; then :
-  withval=$with_custom_sound; have_snd_custom="$withval"
-else
-  have_snd_custom="no"
-fi
-
-
-if test "$have_snd_custom" = "yes"; then
-  # check for libraries, headers, etc., here...
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling ${plugin}" >&5
-$as_echo "******** disabling ${plugin}" >&6; }
-  disabled_plugins="${disabled_plugins} ${plugin}"
-fi
-if test "${plibs}"; then
-  llibs="${LIBS}"
-  for l in ${plibs}; do
-  llibs="${llibs} -l${l}"
-  done
-  echo ${llibs} > ${plugin}.lib
-fi
-plugin="vm-sound-null"
-plibs=""
-rm -f vm-sound-null.sub vm-sound-null.lib
-# -*- sh -*-
-# empty to provoke config/mkacinc into including vm-sound-null for consideration
-
-#AC_ARG_WITH(vm-sound-null,
-#[  --without-vm-sound-null      disable null vm sound support [default=enabled]],
-#  [with_vm_sound_null="$withval"],
-#  [with_vm_sound_null="yes"])
-#if test "$with_vm_sound_null" = "no"; then
-#	AC_PLUGIN_DISABLE_PLUGIN(vm-sound-null);
-#fi
-
 if test "${plibs}"; then
   llibs="${LIBS}"
   for l in ${plibs}; do
@@ -18343,191 +18452,72 @@ if test "${plibs}"; then
   done
   echo ${llibs} > ${plugin}.lib
 fi
-plugin="vm"
+plugin="vm-sound-Sun"
 plibs=""
-rm -f vm.sub vm.lib
+rm -f vm-sound-Sun.sub vm-sound-Sun.lib
+# -*- sh -*-
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SunOS/Solaris audio" >&5
+$as_echo_n "checking for SunOS/Solaris audio... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/audioio.h>
+int
+main ()
+{
+AUDIO_SUNVTS;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_SYS_AUDIOIO_H 1
+_ACEOF
 
 
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for nl_langinfo and CODESET" >&5
-$as_echo_n "checking for nl_langinfo and CODESET... " >&6; }
-if ${ac_cv_langinfo_codeset+:} false; then :
-  $as_echo_n "(cached) " >&6
 else
+
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <langinfo.h>
+#include <sun/audioio.h>
 int
 main ()
 {
-char *cs= nl_langinfo(CODESET);
+AUDIO_SUNVTS;
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_langinfo_codeset=yes
-else
-  ac_cv_langinfo_codeset=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
+if ac_fn_c_try_compile "$LINENO"; then :
 
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_langinfo_codeset" >&5
-$as_echo "$ac_cv_langinfo_codeset" >&6; }
-  if test $ac_cv_langinfo_codeset = yes; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
 
-$as_echo "#define HAVE_LANGINFO_CODESET 1" >>confdefs.h
-
-  fi
-
-
-
-case $host_os in
-  darwin*) LIBS="$LIBS -framework CoreFoundation -framework CoreServices";;
-  *)
-    # Check whether --enable-iconv was given.
-if test "${enable_iconv+set}" = set; then :
-  enableval=$enable_iconv; with_iconv="$enableval"
-else
-  with_iconv="yes"
-fi
-
-    if test "$with_iconv" = "yes"; then
-      for ac_header in iconv.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "iconv.h" "ac_cv_header_iconv_h" "$ac_includes_default"
-if test "x$ac_cv_header_iconv_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_ICONV_H 1
+cat >>confdefs.h <<_ACEOF
+#define HAVE_SUN_AUDIOIO_H 1
 _ACEOF
 
-fi
-
-done
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing iconv_open" >&5
-$as_echo_n "checking for library containing iconv_open... " >&6; }
-if ${ac_cv_search_iconv_open+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char iconv_open ();
-int
-main ()
-{
-return iconv_open ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' iconv; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_iconv_open=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_iconv_open+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_iconv_open+:} false; then :
-
-else
-  ac_cv_search_iconv_open=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_iconv_open" >&5
-$as_echo "$ac_cv_search_iconv_open" >&6; }
-ac_res=$ac_cv_search_iconv_open
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 else
 
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing libiconv_open" >&5
-$as_echo_n "checking for library containing libiconv_open... " >&6; }
-if ${ac_cv_search_libiconv_open+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char libiconv_open ();
-int
-main ()
-{
-return libiconv_open ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' iconv; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_libiconv_open=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_libiconv_open+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_libiconv_open+:} false; then :
 
-else
-  ac_cv_search_libiconv_open=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_libiconv_open" >&5
-$as_echo "$ac_cv_search_libiconv_open" >&6; }
-ac_res=$ac_cv_search_libiconv_open
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling ${plugin}" >&5
+$as_echo "******** disabling ${plugin}" >&6; }
+  disabled_plugins="${disabled_plugins} ${plugin}"
 
 fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 fi
-
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling iconv" >&5
-$as_echo "******** disabling iconv" >&6; }
-    fi
-    ;;
-esac
-
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 if test "${plibs}"; then
   llibs="${LIBS}"
   for l in ${plibs}; do
@@ -18641,6 +18631,31 @@ else
 $as_echo "******** disabling ${plugin}" >&6; }
   disabled_plugins="${disabled_plugins} ${plugin}"
 fi
+if test "${plibs}"; then
+  llibs="${LIBS}"
+  for l in ${plibs}; do
+  llibs="${llibs} -l${l}"
+  done
+  echo ${llibs} > ${plugin}.lib
+fi
+plugin="FloatMathPlugin"
+plibs=""
+rm -f FloatMathPlugin.sub FloatMathPlugin.lib
+libm_cflags="-O"
+
+if test "$GCC" = yes; then
+  case $host_cpu in
+  i?86)
+    libm_cflags="-O -fomit-frame-pointer -DLSB_FIRST=1"
+    ;;
+  powerpc|ppc)
+    libm_cflags="-O3 -funroll-loops -mcpu=750 -mno-fused-madd -DLSB_FIRST=0"
+    ;;
+  esac
+fi
+
+LIBM_CFLAGS=$libm_cflags
+
 if test "${plibs}"; then
   llibs="${LIBS}"
   for l in ${plibs}; do
@@ -18853,31 +18868,6 @@ $as_echo "yes" >&6; }
 fi
 
 
-
-if test "${plibs}"; then
-  llibs="${LIBS}"
-  for l in ${plibs}; do
-  llibs="${llibs} -l${l}"
-  done
-  echo ${llibs} > ${plugin}.lib
-fi
-plugin="FloatMathPlugin"
-plibs=""
-rm -f FloatMathPlugin.sub FloatMathPlugin.lib
-libm_cflags="-O"
-
-if test "$GCC" = yes; then
-  case $host_cpu in
-  i?86)
-    libm_cflags="-O -fomit-frame-pointer -DLSB_FIRST=1"
-    ;;
-  powerpc|ppc)
-    libm_cflags="-O3 -funroll-loops -mcpu=750 -mno-fused-madd -DLSB_FIRST=0"
-    ;;
-  esac
-fi
-
-LIBM_CFLAGS=$libm_cflags
 
 if test "${plibs}"; then
   llibs="${LIBS}"
@@ -19169,6 +19159,27 @@ if test "${plibs}"; then
   done
   echo ${llibs} > ${plugin}.lib
 fi
+plugin="RiscVPlugin"
+plibs=""
+rm -f RiscVPlugin.sub RiscVPlugin.lib
+# To build the RiscVPlugin one must build the Bochs support libraries
+if test -f ../../../../processors/riscv_em/build/libriscv_em.a; then
+	echo "risv_em library has been built; building RiscVPlugin"
+else
+	echo "riscv_em library has not been built; not building RiscVPlugin"
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling ${plugin}" >&5
+$as_echo "******** disabling ${plugin}" >&6; }
+  disabled_plugins="${disabled_plugins} ${plugin}"
+fi
+if test "${plibs}"; then
+  llibs="${LIBS}"
+  for l in ${plibs}; do
+  llibs="${llibs} -l${l}"
+  done
+  echo ${llibs} > ${plugin}.lib
+fi
 plugin="SqueakSSL"
 plibs=""
 rm -f SqueakSSL.sub SqueakSSL.lib
@@ -19428,6 +19439,117 @@ if test "${plibs}"; then
   done
   echo ${llibs} > ${plugin}.lib
 fi
+plugin="UnicodePlugin"
+plibs=""
+rm -f UnicodePlugin.sub UnicodePlugin.lib
+# -*- sh -*-
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNICODE_PLUGIN" >&5
+$as_echo_n "checking for UNICODE_PLUGIN... " >&6; }
+
+if test -n "$UNICODE_PLUGIN_CFLAGS"; then
+    pkg_cv_UNICODE_PLUGIN_CFLAGS="$UNICODE_PLUGIN_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 pangocairo\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "glib-2.0 pangocairo") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_UNICODE_PLUGIN_CFLAGS=`$PKG_CONFIG --cflags "glib-2.0 pangocairo" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$UNICODE_PLUGIN_LIBS"; then
+    pkg_cv_UNICODE_PLUGIN_LIBS="$UNICODE_PLUGIN_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 pangocairo\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "glib-2.0 pangocairo") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_UNICODE_PLUGIN_LIBS=`$PKG_CONFIG --libs "glib-2.0 pangocairo" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        UNICODE_PLUGIN_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "glib-2.0 pangocairo" 2>&1`
+        else
+	        UNICODE_PLUGIN_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "glib-2.0 pangocairo" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$UNICODE_PLUGIN_PKG_ERRORS" >&5
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling ${plugin}" >&5
+$as_echo "******** disabling ${plugin}" >&6; }
+  disabled_plugins="${disabled_plugins} ${plugin}"
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling ${plugin}" >&5
+$as_echo "******** disabling ${plugin}" >&6; }
+  disabled_plugins="${disabled_plugins} ${plugin}"
+else
+	UNICODE_PLUGIN_CFLAGS=$pkg_cv_UNICODE_PLUGIN_CFLAGS
+	UNICODE_PLUGIN_LIBS=$pkg_cv_UNICODE_PLUGIN_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi
+
+
+
+
+if test "${plibs}"; then
+  llibs="${LIBS}"
+  for l in ${plibs}; do
+  llibs="${llibs} -l${l}"
+  done
+  echo ${llibs} > ${plugin}.lib
+fi
+plugin="UnixOSProcessPlugin"
+plibs=""
+rm -f UnixOSProcessPlugin.sub UnixOSProcessPlugin.lib
+ac_fn_c_check_func "$LINENO" "unsetenv" "ac_cv_func_unsetenv"
+if test "x$ac_cv_func_unsetenv" = xyes; then :
+
+$as_echo "#define HAVE_UNSETENV 1" >>confdefs.h
+
+fi
+
+if test "${plibs}"; then
+  llibs="${LIBS}"
+  for l in ${plibs}; do
+  llibs="${llibs} -l${l}"
+  done
+  echo ${llibs} > ${plugin}.lib
+fi
 plugin="UUIDPlugin"
 plibs=""
 rm -f UUIDPlugin.sub UUIDPlugin.lib
@@ -19607,117 +19729,6 @@ $as_echo "******** disabling ${plugin}" >&6; }
 
 fi
 
-
-fi
-
-if test "${plibs}"; then
-  llibs="${LIBS}"
-  for l in ${plibs}; do
-  llibs="${llibs} -l${l}"
-  done
-  echo ${llibs} > ${plugin}.lib
-fi
-plugin="UnicodePlugin"
-plibs=""
-rm -f UnicodePlugin.sub UnicodePlugin.lib
-# -*- sh -*-
-
-pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNICODE_PLUGIN" >&5
-$as_echo_n "checking for UNICODE_PLUGIN... " >&6; }
-
-if test -n "$UNICODE_PLUGIN_CFLAGS"; then
-    pkg_cv_UNICODE_PLUGIN_CFLAGS="$UNICODE_PLUGIN_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 pangocairo\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "glib-2.0 pangocairo") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_UNICODE_PLUGIN_CFLAGS=`$PKG_CONFIG --cflags "glib-2.0 pangocairo" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$UNICODE_PLUGIN_LIBS"; then
-    pkg_cv_UNICODE_PLUGIN_LIBS="$UNICODE_PLUGIN_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 pangocairo\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "glib-2.0 pangocairo") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_UNICODE_PLUGIN_LIBS=`$PKG_CONFIG --libs "glib-2.0 pangocairo" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        UNICODE_PLUGIN_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "glib-2.0 pangocairo" 2>&1`
-        else
-	        UNICODE_PLUGIN_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "glib-2.0 pangocairo" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$UNICODE_PLUGIN_PKG_ERRORS" >&5
-
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling ${plugin}" >&5
-$as_echo "******** disabling ${plugin}" >&6; }
-  disabled_plugins="${disabled_plugins} ${plugin}"
-elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling ${plugin}" >&5
-$as_echo "******** disabling ${plugin}" >&6; }
-  disabled_plugins="${disabled_plugins} ${plugin}"
-else
-	UNICODE_PLUGIN_CFLAGS=$pkg_cv_UNICODE_PLUGIN_CFLAGS
-	UNICODE_PLUGIN_LIBS=$pkg_cv_UNICODE_PLUGIN_LIBS
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-fi
-
-
-
-
-if test "${plibs}"; then
-  llibs="${LIBS}"
-  for l in ${plibs}; do
-  llibs="${llibs} -l${l}"
-  done
-  echo ${llibs} > ${plugin}.lib
-fi
-plugin="UnixOSProcessPlugin"
-plibs=""
-rm -f UnixOSProcessPlugin.sub UnixOSProcessPlugin.lib
-ac_fn_c_check_func "$LINENO" "unsetenv" "ac_cv_func_unsetenv"
-if test "x$ac_cv_func_unsetenv" = xyes; then :
-
-$as_echo "#define HAVE_UNSETENV 1" >>confdefs.h
 
 fi
 
@@ -21424,6 +21435,7 @@ $as_echo "$as_me: executing $ac_file commands" >&6;}
     cat <<_LT_EOF >> "$cfgfile"
 #! $SHELL
 # Generated automatically by $as_me ($PACKAGE) $VERSION
+# Libtool was configured on host `(hostname || uname -n) 2>/dev/null | sed 1q`:
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 
 # Provide generalized library-building support services.

@@ -6,6 +6,8 @@
 #include "sqSetjmpShim.h"
 #include "RiscVPlugin.h"
 
+#include "riscv_example_soc.h"
+
 void (*prevInterruptCheckChain)() = 0;
 long resetCPU(void *cpu);
 
@@ -14,6 +16,8 @@ void *newCPU() {
 }
 
 long resetCPU(void *cpu) {
+	rv_soc_td soc;
+	rv_soc_init(&soc, "test.fw", "test.db");
 	return 43;
 }
 
