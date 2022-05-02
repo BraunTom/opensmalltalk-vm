@@ -19,7 +19,12 @@ INCDIRS:=../../../processors/riscv_em/src/core \
 			../../../processors/riscv_em/src/core/pmp \
 			../../../processors/riscv_em/src/core/trap \
 			../../../processors/riscv_em/src/helpers \
-			../../../processors/riscv_em/src/peropherals \
+			../../../processors/riscv_em/src/helpers/fifo.c \
+    		../../../processors/riscv_em/src/helpers/file_helper.c \
+			../../../processors/riscv_em/src/peripherals \
+			../../../processors/riscv_em/src/peripherals/clint \
+			../../../processors/riscv_em/src/peripherals/plic \
+			../../../processors/riscv_em/src/peripherals/uart \
 			../../../processors/riscv_em/src/soc
 			
 
