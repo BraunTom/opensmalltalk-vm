@@ -20,7 +20,7 @@ CLASS=RiscVAlien
 
 CFLAGS=-m64 -DCOG=1 -DMODET -DWITH_PROFILE=-1 -DWITH_TARGET_BYTE_ORDER=BFD_ENDIAN_LITTLE $(INCLUDES) $(LIBS)
 
-all: ${CLASS}-regs.st ${CLASS}-ctrl.st ${CLASS}-vfp.st
+all: ${CLASS}-regs.st ${CLASS}-vfp.st
 
 ${CLASS}-regs.st: printcpu
 	./printcpu > $@

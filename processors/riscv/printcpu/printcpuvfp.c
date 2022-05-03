@@ -22,11 +22,7 @@ lower(char *s)
 	return buf;
 }
 
-#if FOR64BITS
-# define CLASS "!GdbARMv8Alien64"
-#else
-# define CLASS "!GdbARMv8Alien"
-#endif
+# define CLASS "!RiscVAlien"
 
 int
 main()
