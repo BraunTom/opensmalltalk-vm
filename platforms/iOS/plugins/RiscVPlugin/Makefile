@@ -1,4 +1,4 @@
-GDB=../../../processors/gdb-12.1
+GDB=../../../processors/riscv/gdb-12.1
 PREREQUISITES:= ../riscv/sim/riscv/libsim.a
 
 INCDIRS:=$(GDB)/include $(GDB)/opcodes $(GDB)/sim/riscv $(GDB)/sim/common $(GDB)/bfd ../riscv/bfd ../riscv/sim ../riscv ../riscv/sim/common
@@ -15,8 +15,8 @@ else # default CONFIGURATION=product
     EXTRA_FOR_ASSERT:=
 endif 
 EXTRALIBS:= -L../riscv/bfd -L../riscv/libiberty \
-			-L../riscv/opcodes -L../riscv/sim/riscv \
-			-lbfd -liberty -lopcodes -lopcodes -lsim -lz \
+			-L../riscv/opcodes -L../riscv/sim/riscv -L../riscv/gnulib/import \
+			-lbfd -liberty -lopcodes -lopcodes -lsim -lz -lgnu \
 			$(EXTRA_FOR_ASSERT)
 
 include ../common/Makefile.plugin

@@ -1,5 +1,8 @@
 #!/bin/sh
-S=../../../../processors/gdb-12.1
+
+set -ex
+
+S=../../../../processors/riscv/gdb-12.1
 TARGET="-arch arm64"
 export CFLAGS="$TARGET -g -O3 -m64 -DCOG=1 -DWORDS_BIGENDIAN=0"
 CONFFLAGS='--target=riscv64 CC=clang CXX=clang++ --with-system-zlib=yes
@@ -8,7 +11,7 @@ mkdir -p bfd gdb libiberty opcodes sim/common sim/riscv gnulib sim opcodes
 for d in gnulib bfd gdb libiberty opcodes sim opcodes; do
 	(cd $d; $S/$d/configure COG=1 CFLAGS="$CFLAGS" $CONFFLAGS)
  done
-for d in sim/common sim/riscv; do
+for d in sim/riscv; do
 	(cd $d;
 	 ../$S/$d/configure COG=1 CFLAGS="$CFLAGS" $CONFFLAGS \
          --disable-sim-trace)
