@@ -1,6 +1,7 @@
 #define COG 1
 #define FOR_COG_PLUGIN 1
 
+#include "config.h"
 #include "sqAssert.h"
 #include "RiscVPlugin.h"
 

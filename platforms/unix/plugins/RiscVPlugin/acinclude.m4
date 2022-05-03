@@ -1,7 +1,7 @@
-# To build the RiscVPlugin one must build the riscv_em library first
-if test -f ../../../../processors/riscv_em/build/libriscv_em.a; then
-	echo "risv_em library has been built; building RiscVPlugin"
+# To build the RiscVPlugin one must build libsim.a from gdb
+if test -f ../../riscv/sim/riscv/libsim.a; then
+	echo "libsim.a has been built; building GdbARMPlugin"
 else
-	echo "riscv_em library has not been built; not building RiscVPlugin"
-	AC_PLUGIN_DISABLE
+	echo "../../riscv/sim/riscv/libsim.a has not been built; not building GdbARMPlugin"
+  AC_PLUGIN_DISABLE
 fi

@@ -10069,7 +10069,11 @@ fi
 
 # Check whether --with-libgmp-prefix was given.
 echo --------------
-with_libgmp_prefix=/opt/homebrew/Cellar/gmp/6.2.1_1
+
+if [ $(uname) = "Darwin" ]; then
+  with_libgmp_prefix=/opt/homebrew/Cellar/gmp/6.2.1_1
+fi
+
 echo ${with_libgmp_prefix+set}
 echo $set
 echo ${with_libgmp_type}

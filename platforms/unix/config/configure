@@ -19162,11 +19162,11 @@ fi
 plugin="RiscVPlugin"
 plibs=""
 rm -f RiscVPlugin.sub RiscVPlugin.lib
-# To build the RiscVPlugin one must build the Bochs support libraries
-if test -f ../../../../processors/riscv_em/build/libriscv_em.a; then
-	echo "risv_em library has been built; building RiscVPlugin"
+# To build the RiscVPlugin one must build libsim.a from gdb
+if test -f ../../riscv/sim/riscv/libsim.a; then
+	echo "libsim.a has been built; building GdbARMPlugin"
 else
-	echo "riscv_em library has not been built; not building RiscVPlugin"
+	echo "../../riscv/sim/riscv/libsim.a has not been built; not building GdbARMPlugin"
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: ******** disabling ${plugin}" >&5

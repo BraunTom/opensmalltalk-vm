@@ -1,14 +1,21 @@
-XCPPFLAGS=	-fPIC \
-			-I$(topdir)/processors/riscv_em/src/core \
-			-I$(topdir)/processors/riscv_em/src/core/csr \
-			-I$(topdir)/processors/riscv_em/src/core/pmp \
-			-I$(topdir)/processors/riscv_em/src/core/trap \
-			-I$(topdir)/processors/riscv_em/src/core/mmu \
-			-I$(topdir)/processors/riscv_em/src/peripherals/clint \
-			-I$(topdir)/processors/riscv_em/src/peripherals/plic \
-			-I$(topdir)/processors/riscv_em/src/peripherals/uart \
-			-I$(topdir)/processors/riscv_em/src/helpers \
-			-I$(topdir)/processors/riscv_em/src/soc/
+GDBBUILDFOLDER	= ../../../riscv
+GDBSOURCEFOLDER	= ../../../../../processors/gdb-12.1
 
-XLDFLAGS=	-L$(topdir)/processors/riscv_em/build \
-			-lriscv_em
+XINCLUDES	+= -I$(GDBSOURCEFOLDER)/include
+XINCLUDES	+= -I$(GDBSOURCEFOLDER)/opcodes
+XINCLUDES	+= -I$(GDBSOURCEFOLDER)/sim/riscv
+XINCLUDES	+= -I$(GDBSOURCEFOLDER)/sim/common
+XINCLUDES	+= -I$(GDBSOURCEFOLDER)/bfd
+
+XINCLUDES	+= -I$(GDBBUILDFOLDER)/
+XINCLUDES	+= -I$(GDBBUILDFOLDER)/sim
+XINCLUDES	+= -I$(GDBBUILDFOLDER)/sim/common
+XINCLUDES	+= -I$(GDBBUILDFOLDER)/bfd
+
+XLDFLAGS=	-L$(GDBBUILDFOLDER)/bfd \
+					-L$(GDBBUILDFOLDER)/opcodes \
+					-L$(GDBBUILDFOLDER)/sim/riscv \
+					-L$(GDBBUILDFOLDER)/libiberty \
+					-L$(GDBBUILDFOLDER)/gnulib/import \
+					-lsim -lopcodes -lbfd -liberty -lz -lgnu \
+					-Wl

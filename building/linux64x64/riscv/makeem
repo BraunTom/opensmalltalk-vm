@@ -1,0 +1,10 @@
+#!/bin/sh -e
+set -ex
+test -d bfd || ./conf.COG
+(cd ./bfd; make -j COG=1 )
+(cd ./libiberty; make -j COG=1 libiberty.a)
+(cd ./opcodes; make -j COG=1 libopcodes.a)
+(cd ./gnulib; make -j COG=1)
+(cd ./sim; make -j COG=1)
+(cd ./sim/riscv; make -j COG=1 libsim.a)
+
