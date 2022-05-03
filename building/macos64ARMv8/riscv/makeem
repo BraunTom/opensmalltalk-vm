@@ -1,0 +1,9 @@
+#!/bin/sh -e
+test -d bfd || ./conf.COG
+(cd ./bfd; remake COG=1 )
+(cd ./libiberty; remake COG=1 libiberty.a)
+(cd ./opcodes; remake COG=1 libopcodes.a)
+(cd ./gnulib; remake COG=1)
+(cd ./sim; remake COG=1)
+(cd ./sim/riscv; make COG=1 libsim.a)
+

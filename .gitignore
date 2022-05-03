@@ -43,6 +43,11 @@ platforms/unix/config/autom4te.cache/
 !/building/**/edit*.sh
 !/building/**/make*
 !/building/**/asasm
+!/building/macos64ARMv8/
+!/building/macos64ARMv8/riscv/
+!/building/macos64ARMv8/riscv/conf.COG
+!/building/macos64ARMv8/riscv/makeem
+!/building/macos64ARMv8/riscv/clean
 # ... and except this custom artifacts? What is this?
 !/build/**/conf.COG*
 !/build/**/make*
