@@ -1,5 +1,5 @@
 GDBBUILDFOLDER	= ../../../riscv
-GDBSOURCEFOLDER	= ../../../../../processors/gdb-12.1
+GDBSOURCEFOLDER	= ../../../../../processors/riscv/gdb-12.1
 
 XINCLUDES	+= -I$(GDBSOURCEFOLDER)/include
 XINCLUDES	+= -I$(GDBSOURCEFOLDER)/opcodes

@@ -1,5 +1,5 @@
 #!/bin/sh
-S=../../../../processors/gdb-12.1
+S=../../../../processors/riscv/gdb-12.1
 export CFLAGS="-fPIC -g -O3 -m64 -DCOG=1 -DWORDS_BIGENDIAN=0"
 CONFFLAGS='--target=riscv64 CC=clang CXX=clang++ --with-system-zlib=yes'
 
