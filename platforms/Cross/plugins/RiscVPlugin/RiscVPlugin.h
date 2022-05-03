@@ -1,7 +1,5 @@
-#pragma once
-
-/* Include file for the riscv_em RV64I processor simulator, RiscVPlugin */
-#define NumIntegerRegisterStateFields 33 /* the 32 registers plus pc */
+/* Include file for the ARMv8/ARM64 processor simulator plugin, GdbARMv8Plugin */
+#define NumIntegerRegisterStateFields 33 /* the 32 registers plus pc & flags */
 #define WordType unsigned long long
 
 #include <../ProcessorSimulatorPlugin.h>

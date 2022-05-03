@@ -1,34 +1,25 @@
-# copied from bochs
+GDB=../../../processors/gdb-12.1
+PREREQUISITES:= ../riscv/sim/riscv/libsim.a
 
-# BOX:=../bochsx64
-# PREREQUISITES:=$(BOX)/cpu/libcpu.a $(BOX)/disasm/libdisasm.a $(BOX)/fpu/libfpu.a
+INCDIRS:=$(GDB)/include $(GDB)/opcodes $(GDB)/sim/riscv $(GDB)/sim/common $(GDB)/bfd ../riscv/bfd ../riscv/sim ../riscv ../riscv/sim/common
+INCFIRST:=$(GDB)/include $(GDB)/opcodes $(GDB)/sim/riscv $(GDB)/sim/common $(GDB)/bfd ../riscv/bfd ../riscv/sim ../riscv ../riscv/sim/common
+XCFLAGS:=-DWITH_PROFILE=-1
 
-# LINK_WITH_CXX:=1
-# INCDIRS:=$(BOX) \
-         ../../../processors/IA32/bochs \
-		 ../../../processors/IA32/bochs/instrument/stubs
-# EXTRALIBS:=	-L$(BOX)/cpu -L$(BOX)/fpu -L$(BOX)/disasm -lcpu -lfpu -ldisasm
-# CFLAGS:=-DUSE_BOCHS_CONFIG_H=1
-
-RISCV:=../../../processors/riscv_em/build
-PREREQUISITES:=$(RISCV)/libriscv_em.a
-
-INCDIRS:=../../../processors/riscv_em/src/core \
-			../../../processors/riscv_em/src/core/csr \
-			../../../processors/riscv_em/src/core/mmu \
-			../../../processors/riscv_em/src/core/pmp \
-			../../../processors/riscv_em/src/core/trap \
-			../../../processors/riscv_em/src/helpers \
-			../../../processors/riscv_em/src/helpers/fifo.c \
-    		../../../processors/riscv_em/src/helpers/file_helper.c \
-			../../../processors/riscv_em/src/peripherals \
-			../../../processors/riscv_em/src/peripherals/clint \
-			../../../processors/riscv_em/src/peripherals/plic \
-			../../../processors/riscv_em/src/peripherals/uart \
-			../../../processors/riscv_em/src/soc
-			
-
-EXTRALIBS:=	-L$(RISCV) -lriscv_em
-
+# assert uses warning, which is in the VM, so -undefined dynamic_lookup needed
+ifeq ($(CONFIGURATION),assert)
+    EXTRA_FOR_ASSERT:=-undefined dynamic_lookup
+else ifeq ($(CONFIGURATION),debug)
+    EXTRA_FOR_ASSERT:=-undefined dynamic_lookup
+    BUILD:=builddbg 
+else # default CONFIGURATION=product
+    EXTRA_FOR_ASSERT:=
+endif 
+EXTRALIBS:= -L../riscv/bfd -L../riscv/libiberty \
+			-L../riscv/opcodes -L../riscv/sim/riscv \
+			-lbfd -liberty -lopcodes -lopcodes -lsim -lz \
+			$(EXTRA_FOR_ASSERT)
 
 include ../common/Makefile.plugin
+
+INCDIRS:= $(INCFIRST) $(MAKERVMDIR) $(CROSSVMDIR) $(MAKERDIR) $(OSXPLGDIR) $(OSXVMDIR) $(CROSSDIR)
+INCLUDES:= $(addprefix -I,. $(INCDIRS))
