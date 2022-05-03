@@ -1,3 +1,0 @@
-[submodule "processors/riscv_em"]
-	path = processors/riscv_em
-	url = https://github.com/BraunTom/riscv_em.git
