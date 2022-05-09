@@ -7,6 +7,12 @@
 
 #include <stdarg.h>
 
+#undef PACKAGE
+#undef VERSION
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
 #include "sim-main.h"
 #include "opcode/riscv.h"
 #include "sim/callback.h"
@@ -53,14 +59,13 @@ static int            continueRunning;
  */
 void	(*prevInterruptCheckChain)() = 0;
 
-static host_callback callback;
+static host_callback callback; // we do not set any of the callbacks -> it is possible we get segfaults from this
 
 void *
 newCPU()
 {
 	if (!lastCPU) {
 		char *riscv_argv[] = {"RISCV", 0};
-
 		lastCPU = sim_open(SIM_OPEN_STANDALONE, &callback, 0, riscv_argv);
 		initialSimState = *(lastCPU->cpu[0]);
 		memset(&initialSimState.regs[0],
@@ -85,17 +90,13 @@ resetCPU(void *cpu)
 #define run 0
 #define step 1
 
-unsigned int next_instruction_length(sim_cpu *cpu) {
-	unsigned_word iw = sim_core_read_aligned_2 (cpu, cpu->pc, exec_map, cpu->pc);
-	return riscv_insn_length(iw);
-}
-
 static inline long
-runOnCPU(sim_cpu *cpu, void *memory, 
+runOnCPU(sim_cpu *cpu, void *memory,
 		uintptr_t byteSize, uintptr_t minAddr, uintptr_t minWriteMaxExecAddr, int runOrStep)
 {
-	unsigned int len = next_instruction_length(cpu);
-	uint64_t postpc = cpu->pc + len;
+    cpu->base.core.common.map[2].first->buffer = memory;
+    // + 4 as we assume instructions are always 4 byte
+	uint64_t postpc = cpu->pc + 4;
 
 	theMemory = (unsigned char *)memory;
 	theMemorySize = byteSize;
@@ -110,27 +111,29 @@ runOnCPU(sim_cpu *cpu, void *memory,
 	gdblog_index = 0;
 
 	if (runOrStep == step) {
-		step_once(cpu);
-		if (postpc <= minWriteMaxExecAddr && cpu->pc + len <= minWriteMaxExecAddr)
-		{
-			cpu->pc = cpu->pc + len;
+        if(postpc <= minWriteMaxExecAddr) { step_once(cpu); }
+		if (cpu->pc + 4 <= minWriteMaxExecAddr) {
+			cpu->pc = cpu->pc + 4;
 		}
 	}
 	else {
-		continueRunning = 1;
-		step_once(cpu);
-		while (continueRunning && postpc <= minWriteMaxExecAddr && !gdblog_index)
-		{
-			if (cpu->pc + len <= minWriteMaxExecAddr) {
-				cpu->pc = cpu->pc + len;
-			}
-			
-			// Todo: postpc = cpu->nextpc + sizeof(cpu->instr);
-			postpc = cpu->pc + len;
-		}
+        while(!gdblog_index) {
+            if (postpc <= minWriteMaxExecAddr) {
+                step_once(cpu);
+            } else {
+                break;
+            }
+            if(!gdblog_index) {break;}
+
+            if (cpu->pc + 4 <= minWriteMaxExecAddr)
+                cpu->pc = cpu->pc + 4;
+            postpc = cpu->pc + 4 + 4;
+        }
+
+
 	}
 	if (postpc > minWriteMaxExecAddr
-	 || cpu->pc + next_instruction_length(cpu) > minWriteMaxExecAddr)
+	 || cpu->pc + 4 > minWriteMaxExecAddr)
 		return InstructionPrefetchError;
 
 #if 0
@@ -239,101 +242,8 @@ getlog(long *len)
 void
 storeIntegerRegisterStateOfinto(void *cpu, WordType *registerState)
 {
-	for (int n = -1; ++n < 32;)
+	for (int n = 0; n < 32; n++) {
 		registerState[n] = ((sim_cpu *)cpu)->regs[n];
-	registerState[32] = ((sim_cpu *)cpu)->pc;
+	}
+		
 }
-
-/* Adapted from sim/aarch64/memory.c -- Memory accessor functions for the AArch64 simulator
-
-   Copyright (C) 2015-2019 Free Software Foundation, Inc.
-
- */
-
-/* FIXME: AArch64 requires aligned memory access if SCTRLR_ELx.A is set,
-   but we are not implementing that here.  */
-/*#define FETCH_FUNC(RETURN_TYPE, ACCESS_TYPE, NAME, N)					\
-  RETURN_TYPE															\
-  aarch64_get_mem_##NAME (sim_cpu *cpu, uint64_t address)				\
-  { RETURN_TYPE val;													\
-	if (address < minReadAddress										\
-	 || address + N > theMemorySize)									\
-		longjmp(error_abort,MemoryBoundsError);							\
-	memcpy(&val, theMemory + address, N);								\
-    return val;															\
-  }
-
-FETCH_FUNC(uint64_t, uint64_t, u64, 8)
-FETCH_FUNC(int64_t,   int64_t, s64, 8)
-FETCH_FUNC(uint32_t, uint32_t, u32, 4)
-FETCH_FUNC(int32_t,   int32_t, s32, 4)
-FETCH_FUNC(uint32_t, uint16_t, u16, 2)
-FETCH_FUNC(int32_t,   int16_t, s16, 2)
-FETCH_FUNC(uint32_t,  uint8_t, u8, 1)
-FETCH_FUNC(int32_t,    int8_t, s8, 1)
-
-void
-aarch64_get_mem_long_double (sim_cpu *cpu, uint64_t address, FRegister *a)
-{
-	if (address < minReadAddress
-	 || address + 16 > theMemorySize)
-		longjmp(error_abort,MemoryBoundsError);
-	memcpy(a, theMemory + address, 16);
-}
-
-/* FIXME: Aarch64 requires aligned memory access if SCTRLR_ELx.A is set,
-   but we are not implementing that here.  *//*
-#define STORE_FUNC(TYPE, NAME, N)										\
-  void																	\
-  aarch64_set_mem_##NAME (sim_cpu *cpu, uint64_t address, TYPE value)	\
-  {																		\
-	if (address < minWriteAddress										\
-	 || address + N > theMemorySize)									\
-		longjmp(error_abort,MemoryBoundsError);							\
-	memcpy(theMemory + address, &value, N);								\
-  }
-
-STORE_FUNC(uint64_t, u64, 8)
-STORE_FUNC( int64_t, s64, 8)
-STORE_FUNC(uint32_t, u32, 4)
-STORE_FUNC( int32_t, s32, 4)
-STORE_FUNC(uint16_t, u16, 2)
-STORE_FUNC( int16_t, s16, 2)
-STORE_FUNC(uint8_t,   u8, 1)
-STORE_FUNC( int8_t,   s8, 1)
-
-void
-aarch64_set_mem_long_double (sim_cpu *cpu, uint64_t address, FRegister a)
-{
-	if (address < minWriteAddress
-	 || address + 16 > theMemorySize)
-		longjmp(error_abort,MemoryBoundsError);
-	memcpy(theMemory + address, &a, 16);
-}
-
-void
-aarch64_get_mem_blk(sim_cpu *cpu, uint64_t address,
-					char *buffer, unsigned length)
-{
-	if (address < minReadAddress
-	 || address + length > theMemorySize)
-		longjmp(error_abort,MemoryBoundsError);
-	memcpy(address, theMemory + address, length);
-}
-
-const char *
-aarch64_get_mem_ptr(sim_cpu *cpu, uint64_t address) { return address; }
-
-/* We implement a combined stack and heap.  That way the sbrk()
-   function in libgloss/aarch64/syscalls.c has a chance to detect
-   an out-of-memory condition by noticing a stack/heap collision.
-
-   The heap starts at the end of loaded memory and carries on up
-   to an arbitary 2Gb limit.  */
-/*
-uint64_t
-aarch64_get_heap_start (sim_cpu *cpu) { return 0; }
-
-uint64_t
-aarch64_get_stack_start (sim_cpu *cpu) { return 0x100000; }
-*/
