@@ -19,6 +19,8 @@ EXTRALIBS:= -L../riscv/bfd -L../riscv/libiberty \
 			-lbfd -liberty -lopcodes -lopcodes -lsim -lz -lgnu \
 			$(EXTRA_FOR_ASSERT)
 
+CFLAGS := -DWITH_TARGET_WORD_BITSIZE=64
+
 include ../common/Makefile.plugin
 
 INCDIRS:= $(INCFIRST) $(MAKERVMDIR) $(CROSSVMDIR) $(MAKERDIR) $(OSXPLGDIR) $(OSXVMDIR) $(CROSSDIR)
