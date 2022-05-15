@@ -203,10 +203,9 @@ disassembleForAtInSize(void *cpu, uintptr_t laddr,
 	// void init_disassemble_info (struct disassemble_info *dinfo, void *stream, fprintf_ftype fprintf_func)
 	init_disassemble_info ( dis, NULL, gdb_log_printf);
 
-	dis->arch = bfd_arch_aarch64;
-#if 0
-	dis->mach = bfd_mach_aarch64_unknown;
-#endif
+	dis->arch = bfd_arch_riscv;
+    // needed to figure out the xlen internally
+    dis->mach = bfd_mach_riscv64;
 
 	// sets some fields in the structure dis to architecture specific values
 	disassemble_init_for_target( dis );
@@ -217,7 +216,8 @@ disassembleForAtInSize(void *cpu, uintptr_t laddr,
 
 	// first print the address
 	gdb_log_printf( NULL, "%08lx: ", laddr);
-	//other possible functions are listed in opcodes/dissassemble.c
+	// initializes an internal list without we cannot print anything
+    riscv_get_disassembler(NULL);
 	unsigned int size = print_insn_riscv((bfd_vma) laddr, dis);
 
 	free(dis);
