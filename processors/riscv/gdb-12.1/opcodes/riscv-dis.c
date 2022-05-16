@@ -931,7 +931,7 @@ print_insn_riscv (bfd_vma memaddr, struct disassemble_info *info)
 	  (*info->memory_error_func) (status, memaddr, info);
 	  return status;
 	}
-      insn = (insn_t) bfd_getl16 (packet);
+      insn = (insn_t) bfd_getb16 (packet);
       dump_size = riscv_insn_length (insn);
       riscv_disassembler = riscv_disassemble_insn;
     }
@@ -943,7 +943,7 @@ print_insn_riscv (bfd_vma memaddr, struct disassemble_info *info)
       (*info->memory_error_func) (status, memaddr, info);
       return status;
     }
-  insn = (insn_t) bfd_get_bits (packet, dump_size * 8, false);
+  insn = (packet[0] << 8) + (packet[1]) + (packet[2] << 24) + (packet[3] << 16);
 
   return (*riscv_disassembler) (memaddr, insn, info);
 }

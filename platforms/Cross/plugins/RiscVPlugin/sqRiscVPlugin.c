@@ -217,8 +217,9 @@ disassembleForAtInSize(void *cpu, uintptr_t laddr,
 	// first print the address
 	gdb_log_printf( NULL, "%08lx: ", laddr);
 	// initializes an internal list without we cannot print anything
-    riscv_get_disassembler(NULL);
-	unsigned int size = print_insn_riscv((bfd_vma) laddr, dis);
+    // I hate gdb. For running code it reads at 16 bit bounderies, for disassambling at 8 bit bounderies
+    unsigned int size = riscv_get_disassembler(NULL)((bfd_vma) laddr, dis);
+	// unsigned int size = print_insn_riscv((bfd_vma) laddr, dis);
 
 	free(dis);
 	gdb_log[gdblog_index+1] = 0;
