@@ -8298,7 +8298,6 @@ initializeCodeZoneFromupTo(sqInt startAddress, sqInt endAddress)
 	methodCount = 0;
 	assertValidDualZone();
 	detectFeatures(backEnd);
-	haltOnce();
 	/* begin maybeGenerateCacheFlush */
 	/* begin generateVMOwnerLockFunctions */
 #  if COGMTVM
