@@ -7461,6 +7461,8 @@ generateClosedPICPrototype(void)
 		anInstruction1 = genoperandoperand(opcode, 3133021973U + h, TempReg);
 		/* begin JumpLongZero: */
 		jumpTarget = ((((methodZoneBase + (youngReferrers())) / 2) - 13262352) + 13262352) + (h * 16);
+		if (jumpTarget == 533776) {
+		}
 		genConditionalBranchoperand(JumpLongZero, ((sqInt)jumpTarget));
 		if (h == 1) {
 			endCPICCase1 = genoperandoperand(Label, (labelCounter += 1), bytecodePC);
@@ -8316,7 +8318,6 @@ initializeCodeZoneFromupTo(sqInt startAddress, sqInt endAddress)
 	methodCount = 0;
 	assertValidDualZone();
 	detectFeatures(backEnd);
-	haltOnce();
 	/* begin maybeGenerateCacheFlush */
 	/* begin generateVMOwnerLockFunctions */
 #  if COGMTVM

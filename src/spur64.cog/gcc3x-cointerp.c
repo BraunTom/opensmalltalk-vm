@@ -186,7 +186,7 @@ warningat(const char *s, int l) { /* ditto with line number. */
 #define MaxExternalPrimitiveTableSize 4096
 #define MaxLiteralCountForCompile 60
 #define MaxNegativeErrorCode -8
-#define MaxPrimitiveIndex 0x244
+#define MaxPrimitiveIndex 582
 #define MaxQuickPrimitiveIndex 519
 #define MaxRTRefCount 7
 #define MessageArgumentsIndex 1
@@ -797,7 +797,9 @@ static void primitiveMultiply(void);
 EXPORT(void) primitiveMultiplyLargeIntegers(void);
 static void primitiveNew(void);
 static void primitiveNewMethod(void);
+static void primitiveNewPinnedInOldSpace(void);
 static void primitiveNewWithArg(void);
+static void primitiveNewWithArgPinnedInOldSpace(void);
 static void primitiveNewWithArgUninitialized(void);
 static void primitiveNextInstance(void);
 static void primitiveNextObject(void);
@@ -920,6 +922,7 @@ static void NoDbgRegParms hackSlimBridgeToat(sqInt objOop, sqInt startAddress);
 extern sqInt headerIndicatesAlternateBytecodeSet(sqInt methodHeader);
 static sqInt NoDbgRegParms initFreeChunkWithBytesat(usqLong numBytes, sqInt address);
 static void NoDbgRegParms initSegmentBridgeWithBytesat(usqLong numBytes, sqInt address);
+extern sqInt inOldSpaceInstantiatePinnedClassindexableSize(sqInt classObj, usqInt nElements);
 extern sqInt instantiateClassindexableSize(sqInt classObj, usqInt nElements);
 extern sqInt instantiateUninitializedClassindexableSize(sqInt classObj, usqInt nElements);
 extern sqInt integerObjectOf(sqInt value);
@@ -1996,7 +1999,7 @@ static struct foo * foo = &fum;
 #endif
 static void (*primitiveFunctionPointer)();
 static void *primitiveCalloutPointer = (void *)-1;
-static signed short primitiveMetadataTable[MaxPrimitiveIndex + 2 /* 582 */] = {
+static signed short primitiveMetadataTable[MaxPrimitiveIndex + 2 /* 584 */] = {
 //       0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19
 /*0*/	-256, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-256,
 /*20*/	 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0x101, 0x101,
@@ -2052,7 +2055,7 @@ static signed short primitiveMetadataTable[MaxPrimitiveIndex + 2 /* 582 */] = {
 /*540*/	-256, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 1, 3, 3, 3, 3, 3, 3,
 /*560*/	-256,-256,-256,-256,-256,-256,-256,-256, 0x200,-256,-244, 0x100, 0, 0,-256, 0,
 /*576*/	-256,-256, 0x200,-256,
-/*580*/	 0
+/*580*/	 0, 0, 0
 	};
 static char * traceSources[] = {
 		"?", "m", "i", "callbackEnter", "callbackLeave", "enterCritical", "exitCritical",
@@ -2062,7 +2065,7 @@ static char * traceSources[] = {
 static sqInt (* const pcPreviousToFunction)(sqInt,sqInt) = pcPreviousToinSqueakV3PlusClosuresOrSistaV1Method;
 static void (*interruptCheckChain)(void) = 0;
 static int (*sHEAFn)() = 0;
-static void (*primitiveTable[MaxPrimitiveIndex + 2 /* 582 */])(void) = {
+static void (*primitiveTable[MaxPrimitiveIndex + 2 /* 584 */])(void) = {
 	/* 0 */ (void (*)(void))0,
 	/* 1 */ primitiveAdd,
 	/* 2 */ primitiveSubtract,
@@ -2644,6 +2647,8 @@ static void (*primitiveTable[MaxPrimitiveIndex + 2 /* 582 */])(void) = {
 	/* 578 */ primitiveSuspendBackingUpV2,
 	/* 579 */ (void (*)(void))0,
 	/* 580 */ primitiveNewWithArgUninitialized,
+	/* 581 */ primitiveNewPinnedInOldSpace,
+	/* 582 */ primitiveNewWithArgPinnedInOldSpace,
  0 };
 static void (*externalPrimitiveTable[MaxExternalPrimitiveTableSize + 1 /* 4097 */])(void);
 sqInt maxLiteralCountForCompile = MaxLiteralCountForCompile /* 60 */;
@@ -20445,7 +20450,7 @@ printFrameWithSP(char *theFP, char *theSP)
     usqInt index;
     sqInt methodField;
     usqInt numArgs;
-    usqInt numTemps;
+    sqInt numTemps;
     char *rcvrAddress;
     sqInt rcvrOrClosure;
     CogBlockMethod * self_in_cmHomeMethod;
@@ -34056,6 +34061,95 @@ primitiveNewMethod(void)
 	GIV(stackPointer) = sp;
 }
 
+	/* InterpreterPrimitives>>#primitiveNewPinnedInOldSpace */
+static void
+primitiveNewPinnedInOldSpace(void)
+{   DECL_MAYBE_SQ_GLOBAL_STRUCT
+    sqInt classFormat;
+    sqInt classIndex;
+    sqInt classObj1;
+    sqInt err;
+    sqInt hash;
+    sqInt instSpec;
+    sqInt newObj;
+    usqInt numBytes;
+    sqInt numSlots;
+    sqInt obj;
+    usqInt p;
+    sqInt reasonCode;
+    char *sp;
+
+	
+	/* Allocate a new fixed-size instance.  Fail if the allocation would leave
+	   less than lowSpaceThreshold bytes free. This *will not* cause a GC :-) */
+	/* begin inOldSpaceInstantiatePinnedClass: */
+	classObj1 = longAt(GIV(stackPointer));
+	/* begin formatOfClass: */
+	classFormat = ((longAt((classObj1 + BaseHeaderSize) + (((sqInt)((usqInt)(InstanceSpecificationIndex) << (shiftForWord())))))) >> 3);
+	instSpec = (((usqInt)(classFormat)) >> (fixedFieldsFieldWidth())) & (formatMask());
+	if (!((instSpec <= 1 /* nonIndexablePointerFormat */)
+		 || (instSpec == 5 /* ephemeronFormat */))) {
+		obj = null;
+		goto l10;
+	}
+	/* begin ensureBehaviorHash: */
+	assert(addressCouldBeClassObj(classObj1));
+	flag("todo");
+	classIndex = (((hash = (long32At(classObj1 + 4)) & (identityHashHalfWordMask()))) != 0
+		? hash
+		: (objCouldBeClassObj(classObj1)
+				? (((err = enterIntoClassTable(classObj1))) != 0
+						? -err
+						: (long32At(classObj1 + 4)) & (identityHashHalfWordMask()))
+				: -PrimErrBadReceiver));
+	if (classIndex < 0) {
+		/* begin primitiveFailFor: */
+		GIV(primFailCode) = -classIndex;
+		obj = null;
+		goto l10;
+	}
+	/* begin fixedFieldsOfClassFormat: */
+	numSlots = classFormat & ((1U << (fixedFieldsFieldWidth())) - 1);
+	/* begin inOldSpaceAllocateSlots:format:classIndex: */
+	if (numSlots >= (numSlotsMask())) {
+		if ((((usqInt)(numSlots)) >> 56) > 0) {
+			newObj = null;
+			goto l6;
+		}
+		numBytes = (BaseHeaderSize + BaseHeaderSize) + (numSlots * BytesPerOop);
+	}
+	else {
+		numBytes = BaseHeaderSize + ((numSlots < 1
+	? /* begin allocationUnit */ 8
+	: numSlots * BytesPerOop));
+	}
+	newObj = allocateSlotsInOldSpacebytesformatclassIndex(numSlots, numBytes, instSpec, classIndex);
+	l6:	/* end inOldSpaceAllocateSlots:format:classIndex: */;
+	if (!(newObj == null)) {
+		/* begin fillObj:numSlots:with: */
+		assert(oopisLessThan(((newObj + BaseHeaderSize) + (numSlots * BytesPerOop)) - 1, addressAfter(newObj)));
+		for (p = (((usqInt)(newObj + BaseHeaderSize))); p <= (((usqInt)(((newObj + BaseHeaderSize) + (numSlots * BytesPerOop)) - 1))); p += 8 /* allocationUnit */) {
+			longAtput(p, GIV(nilObj));
+		}
+		/* begin setIsPinnedOf:to: */
+		longAtput(newObj, (longAt(newObj)) | (1U << (pinnedBitShift())));
+	}
+	obj = newObj;
+	l10:	/* end inOldSpaceInstantiatePinnedClass: */;
+	if (obj == null) {
+		/* begin primitiveFailFor: */
+		reasonCode = (isFixedSizePointerFormat(instSpecOfClass(longAt(GIV(stackPointer))))
+			? PrimErrNoMemory
+			: PrimErrBadReceiver);
+		GIV(primFailCode) = reasonCode;
+	}
+	else {
+		/* begin pop:thenPush: */
+		longAtput((sp = GIV(stackPointer) + (((GIV(argumentCount) + 1) - 1) * BytesPerWord)), obj);
+		GIV(stackPointer) = sp;
+	}
+}
+
 
 /*	Allocate a new indexable instance. Fail if the allocation would leave less
 	than lowSpaceThreshold bytes free. May cause a GC.
@@ -34168,26 +34262,15 @@ primitiveNewWithArg(void)
 	than lowSpaceThreshold bytes free. May cause a GC.
  */
 
-	/* InterpreterPrimitives>>#primitiveNewWithArgUninitialized */
+	/* InterpreterPrimitives>>#primitiveNewWithArgPinnedInOldSpace */
 static void
-primitiveNewWithArgUninitialized(void)
+primitiveNewWithArgPinnedInOldSpace(void)
 {   DECL_MAYBE_SQ_GLOBAL_STRUCT
     sqInt bs;
     sqInt ccIndex;
     sqInt classFormat;
-    sqInt classFormat1;
-    sqInt classIndex;
-    sqInt classObj1;
-    sqInt err;
-    sqInt fillValue;
     sqInt fmt;
-    sqInt hash;
     sqInt instSpec;
-    sqInt instSpec1;
-    sqInt newObj;
-    usqInt newObj1;
-    usqInt numBytes;
-    usqInt numSlots;
     sqInt obj;
     sqInt ok;
     sqInt oop1;
@@ -34206,10 +34289,10 @@ primitiveNewWithArgUninitialized(void)
 				GIV(primFailCode) = 1;
 			}
 			size = null;
-			goto l17;
+			goto l10;
 		}
 		size = value;
-		goto l17;
+		goto l10;
 	}
 	if (((oop1 & (tagMask())) != 0)) {
 		/* begin primitiveFail */
@@ -34217,22 +34300,22 @@ primitiveNewWithArgUninitialized(void)
 			GIV(primFailCode) = 1;
 		}
 		size = 0;
-		goto l17;
+		goto l10;
 	}
 	/* begin isClassOfNonImm:equalTo:compactClassIndex: */
 	assert(!(isImmediate(oop1)));
 	/* begin classIndexOf: */
 	ccIndex = (longAt(oop1)) & (classIndexMask());
 	ok = ClassLargePositiveIntegerCompactIndex == ccIndex;
-	goto l16;
-	l16:	/* end isClassOfNonImm:equalTo:compactClassIndex: */;
+	goto l9;
+	l9:	/* end isClassOfNonImm:equalTo:compactClassIndex: */;
 	if (!ok) {
 		/* begin primitiveFail */
 		if (!GIV(primFailCode)) {
 			GIV(primFailCode) = 1;
 		}
 		size = 0;
-		goto l17;
+		goto l10;
 	}
 	/* begin numBytesOfBytes: */
 	fmt = (((usqInt)((longAt(oop1)))) >> (formatShift())) & (formatMask());
@@ -34244,15 +34327,15 @@ primitiveNewWithArgUninitialized(void)
 			GIV(primFailCode) = 1;
 		}
 		size = 0;
-		goto l17;
+		goto l10;
 	}
 	if (((sizeof(usqIntptr_t)) == 8)
 	 && (bs > 4)) {
 		size = SQ_SWAP_8_BYTES_IF_BIGENDIAN((long64At((oop1 + BaseHeaderSize))));
-		goto l17;
+		goto l10;
 	}
 	size = ((unsigned int) (SQ_SWAP_4_BYTES_IF_BIGENDIAN((long32At((oop1 + BaseHeaderSize))))));
-	l17:	/* end positiveMachineIntegerValueOf: */;
+	l10:	/* end positiveMachineIntegerValueOf: */;
 	if (GIV(primFailCode)) {
 
 		/* positiveMachineIntegerValueOf: succeeds only for non-negative integers. */
@@ -34260,136 +34343,114 @@ primitiveNewWithArgUninitialized(void)
 		GIV(primFailCode) = PrimErrBadArgument;
 		return;
 	}
-	/* begin instantiateUninitializedClass:indexableSize: */
-	classObj1 = longAt(GIV(stackPointer) + (1 * BytesPerWord));
-	classFormat1 = ((longAt((classObj1 + BaseHeaderSize) + (((sqInt)((usqInt)(InstanceSpecificationIndex) << (shiftForWord())))))) >> 3);
-	instSpec1 = (((usqInt)(classFormat1)) >> (fixedFieldsFieldWidth())) & (formatMask());
-	classIndex = (long32At(classObj1 + 4)) & (identityHashHalfWordMask());
-	fillValue = 0;
-	flag("Todo");
-	switch (instSpec1) {
-	case 2 /* arrayFormat */:
-		numSlots = size;
-		fillValue = GIV(nilObj);
-		break;
-	case indexablePointersFormat():
-	case weakArrayFormat():
-		numSlots = (classFormat1 & ((1U << (fixedFieldsFieldWidth())) - 1)) + size;
-		fillValue = GIV(nilObj);
-		break;
-	case sixtyFourBitIndexableFormat():
-		numSlots = size;
-		break;
-	case firstLongFormat():
-		if ((classIndex == ClassFloatCompactIndex)
-		 && (size != 2)) {
-			/* begin primitiveFailFor: */
-			GIV(primFailCode) = PrimErrBadReceiver;
-			obj = null;
-			goto l12;
-		}
-		numSlots = (size + 1) / 2;
-		instSpec1 += size & 1;
-		break;
-	case firstShortFormat():
-		numSlots = (size + 3) / 4;
-		instSpec1 += (4 - size) & 3;
-		break;
-	case firstByteFormat():
-		numSlots = (size + 7) / 8;
-		instSpec1 += (8 - size) & 7;
-		break;
-	default:
-		
-		/* non-indexable */
-		/* Some Squeak images include funky fixed subclasses of abstract variable
-		   superclasses. e.g. DirectoryEntry as a subclass of ArrayedCollection.
-		   The (Threaded)FFIPlugin expects to be able to instantiate ExternalData via
-		   this method.
-		   Hence allow fixed classes to be instantiated here iff nElements = 0. */
-		if ((size != 0)
-		 || (instSpec1 > 5 /* lastPointerFormat */)) {
-			obj = null;
-			goto l12;
-		}
-		numSlots = classFormat1 & ((1U << (fixedFieldsFieldWidth())) - 1);
-		fillValue = GIV(nilObj);
-
-	}
-	if (classIndex == 0) {
-		/* begin ensureBehaviorHash: */
-		assert(addressCouldBeClassObj(classObj1));
-		flag("todo");
-		classIndex = (((hash = (long32At(classObj1 + 4)) & (identityHashHalfWordMask()))) != 0
-			? hash
-			: (objCouldBeClassObj(classObj1)
-					? (((err = enterIntoClassTable(classObj1))) != 0
-							? -err
-							: (long32At(classObj1 + 4)) & (identityHashHalfWordMask()))
-					: -PrimErrBadReceiver));
-		if (classIndex < 0) {
-			/* begin primitiveFailFor: */
-			GIV(primFailCode) = -classIndex;
-			obj = null;
-			goto l12;
-		}
-	}
-	if (numSlots > ((1U << (fixedFieldsFieldWidth())) - 1)) {
-		if (numSlots > (0x10000000000LL)) {
-			/* begin primitiveFailFor: */
-			GIV(primFailCode) = PrimErrUnsupported;
-			obj = null;
-			goto l12;
-		}
-		newObj = allocateSlotsInOldSpacebytesformatclassIndex(numSlots, (numSlots == 0
-			? 8 /* allocationUnit */ + BaseHeaderSize
-			: (numSlots << (shiftForWord())) + ((numSlots >= (numSlotsMask())
-	? BaseHeaderSize + BaseHeaderSize
-	: BaseHeaderSize))), instSpec1, classIndex);
+	obj = inOldSpaceInstantiatePinnedClassindexableSize(longAt(GIV(stackPointer) + (1 * BytesPerWord)), size);
+	if (obj == null) {
+		/* begin instSpecOfClass: */
+		classFormat = ((longAt(((longAt(GIV(stackPointer) + (1 * BytesPerWord))) + BaseHeaderSize) + (((sqInt)((usqInt)(InstanceSpecificationIndex) << (shiftForWord())))))) >> 3);
+		instSpec = (((usqInt)(classFormat)) >> (fixedFieldsFieldWidth())) & (formatMask());
+		/* begin primitiveFailFor: */
+		reasonCode = (((instSpec >= 2 /* arrayFormat */)
+		 && ((instSpec <= (weakArrayFormat()))
+		 || (instSpec >= (sixtyFourBitIndexableFormat()))))
+		 && (!(instSpec >= (firstCompiledMethodFormat())))
+			? PrimErrNoMemory
+			: PrimErrBadReceiver);
+		GIV(primFailCode) = reasonCode;
 	}
 	else {
-		/* begin allocateSlots:format:classIndex: */
-		if (numSlots >= (numSlotsMask())) {
-			if (((numSlots) >> 56) > 0) {
-				newObj = null;
-				goto l6;
-			}
-			newObj1 = GIV(freeStart) + BaseHeaderSize;
-			numBytes = (BaseHeaderSize + BaseHeaderSize) + (numSlots * BytesPerOop);
-		}
-		else {
-			newObj1 = GIV(freeStart);
-			numBytes = BaseHeaderSize + ((numSlots < 1
-	? /* begin allocationUnit */ 8
-	: numSlots * BytesPerOop));
-		}
-		if ((GIV(freeStart) + numBytes) > GIV(scavengeThreshold)) {
-			if (!GIV(needGCFlag)) {
-				/* begin scheduleScavenge */
-				GIV(needGCFlag) = 1;
-				forceInterruptCheck();
-			}
-			newObj = allocateSlotsInOldSpacebytesformatclassIndex(numSlots, numBytes, instSpec1, classIndex);
-			goto l6;
-		}
-		if (numSlots >= (numSlotsMask())) {
-
-			/* for header parsing we put a saturated slot count in the prepended overflow size word */
-			flag("endianness");
-			longAtput(GIV(freeStart), (((sqInt)((usqInt)((numSlotsMask())) << (numSlotsFullShift())))) + numSlots);
-			longAtput(newObj1, headerForSlotsformatclassIndex(numSlotsMask(), instSpec1, classIndex));
-		}
-		else {
-			longAtput(newObj1, (((((usqLong) numSlots)) << (numSlotsFullShift())) + (((sqInt)((usqInt)(instSpec1) << (formatShift()))))) + classIndex);
-		}
-		assert((numBytes % (allocationUnit())) == 0);
-		assert((newObj1 % (allocationUnit())) == 0);
-		GIV(freeStart) += numBytes;
-		newObj = newObj1;
-	l6:	/* end allocateSlots:format:classIndex: */;
+		/* begin pop:thenPush: */
+		longAtput((sp = GIV(stackPointer) + (((GIV(argumentCount) + 1) - 1) * BytesPerWord)), obj);
+		GIV(stackPointer) = sp;
 	}
-	obj = newObj;
-	l12:	/* end instantiateUninitializedClass:indexableSize: */;
+}
+
+
+/*	Allocate a new indexable instance. Fail if the allocation would leave less
+	than lowSpaceThreshold bytes free. May cause a GC.
+ */
+
+	/* InterpreterPrimitives>>#primitiveNewWithArgUninitialized */
+static void
+primitiveNewWithArgUninitialized(void)
+{   DECL_MAYBE_SQ_GLOBAL_STRUCT
+    sqInt bs;
+    sqInt ccIndex;
+    sqInt classFormat;
+    sqInt fmt;
+    sqInt instSpec;
+    sqInt obj;
+    sqInt ok;
+    sqInt oop1;
+    sqInt reasonCode;
+    usqIntptr_t size;
+    char *sp;
+    sqInt value;
+
+	/* begin positiveMachineIntegerValueOf: */
+	oop1 = longAt(GIV(stackPointer));
+	if ((((oop1) & 7) == 1)) {
+		value = (oop1 >> 3);
+		if (value < 0) {
+			/* begin primitiveFail */
+			if (!GIV(primFailCode)) {
+				GIV(primFailCode) = 1;
+			}
+			size = null;
+			goto l10;
+		}
+		size = value;
+		goto l10;
+	}
+	if (((oop1 & (tagMask())) != 0)) {
+		/* begin primitiveFail */
+		if (!GIV(primFailCode)) {
+			GIV(primFailCode) = 1;
+		}
+		size = 0;
+		goto l10;
+	}
+	/* begin isClassOfNonImm:equalTo:compactClassIndex: */
+	assert(!(isImmediate(oop1)));
+	/* begin classIndexOf: */
+	ccIndex = (longAt(oop1)) & (classIndexMask());
+	ok = ClassLargePositiveIntegerCompactIndex == ccIndex;
+	goto l9;
+	l9:	/* end isClassOfNonImm:equalTo:compactClassIndex: */;
+	if (!ok) {
+		/* begin primitiveFail */
+		if (!GIV(primFailCode)) {
+			GIV(primFailCode) = 1;
+		}
+		size = 0;
+		goto l10;
+	}
+	/* begin numBytesOfBytes: */
+	fmt = (((usqInt)((longAt(oop1)))) >> (formatShift())) & (formatMask());
+	assert(fmt >= (firstByteFormat()));
+	bs = ((numSlotsOf(oop1)) << (shiftForWord())) - (fmt & 7);
+	if (bs > (sizeof(usqIntptr_t))) {
+		/* begin primitiveFail */
+		if (!GIV(primFailCode)) {
+			GIV(primFailCode) = 1;
+		}
+		size = 0;
+		goto l10;
+	}
+	if (((sizeof(usqIntptr_t)) == 8)
+	 && (bs > 4)) {
+		size = SQ_SWAP_8_BYTES_IF_BIGENDIAN((long64At((oop1 + BaseHeaderSize))));
+		goto l10;
+	}
+	size = ((unsigned int) (SQ_SWAP_4_BYTES_IF_BIGENDIAN((long32At((oop1 + BaseHeaderSize))))));
+	l10:	/* end positiveMachineIntegerValueOf: */;
+	if (GIV(primFailCode)) {
+
+		/* positiveMachineIntegerValueOf: succeeds only for non-negative integers. */
+		/* begin primitiveFailFor: */
+		GIV(primFailCode) = PrimErrBadArgument;
+		return;
+	}
+	obj = instantiateUninitializedClassindexableSize(longAt(GIV(stackPointer) + (1 * BytesPerWord)), size);
 	if (obj == null) {
 		/* begin instSpecOfClass: */
 		classFormat = ((longAt(((longAt(GIV(stackPointer) + (1 * BytesPerWord))) + BaseHeaderSize) + (((sqInt)((usqInt)(InstanceSpecificationIndex) << (shiftForWord())))))) >> 3);
@@ -40896,6 +40957,113 @@ initSegmentBridgeWithBytesat(usqLong numBytes, sqInt address)
 
 /*	Allocate an instance of a variable class, excepting CompiledMethod. */
 
+	/* Spur64BitMemoryManager>>#inOldSpaceInstantiatePinnedClass:indexableSize: */
+sqInt
+inOldSpaceInstantiatePinnedClassindexableSize(sqInt classObj, usqInt nElements)
+{   DECL_MAYBE_SQ_GLOBAL_STRUCT
+    sqInt classFormat;
+    sqInt classIndex;
+    sqInt err;
+    sqInt fillValue;
+    sqInt hash;
+    sqInt instSpec;
+    sqInt newObj;
+    usqInt numSlots;
+    usqInt p;
+
+	classFormat = ((longAt((classObj + BaseHeaderSize) + (((sqInt)((usqInt)(InstanceSpecificationIndex) << (shiftForWord())))))) >> 3);
+	instSpec = (((usqInt)(classFormat)) >> (fixedFieldsFieldWidth())) & (formatMask());
+	classIndex = (long32At(classObj + 4)) & (identityHashHalfWordMask());
+	fillValue = 0;
+	switch (instSpec) {
+	case 2 /* arrayFormat */:
+		numSlots = nElements;
+		fillValue = GIV(nilObj);
+		break;
+	case indexablePointersFormat():
+	case weakArrayFormat():
+		numSlots = (classFormat & ((1U << (fixedFieldsFieldWidth())) - 1)) + nElements;
+		fillValue = GIV(nilObj);
+		break;
+	case sixtyFourBitIndexableFormat():
+		numSlots = nElements;
+		break;
+	case firstLongFormat():
+		if ((classIndex == ClassFloatCompactIndex)
+		 && (nElements != 2)) {
+			/* begin primitiveFailFor: */
+			GIV(primFailCode) = PrimErrBadReceiver;
+			return null;
+		}
+		numSlots = (nElements + 1) / 2;
+		instSpec += nElements & 1;
+		break;
+	case firstShortFormat():
+		numSlots = (nElements + 3) / 4;
+		instSpec += (4 - nElements) & 3;
+		break;
+	case firstByteFormat():
+		numSlots = (nElements + 7) / 8;
+		instSpec += (8 - nElements) & 7;
+		break;
+	default:
+		
+		/* non-indexable */
+		/* Some Squeak images include funky fixed subclasses of abstract variable
+		   superclasses. e.g. DirectoryEntry as a subclass of ArrayedCollection.
+		   The (Threaded)FFIPlugin expects to be able to instantiate ExternalData via
+		   this method.
+		   Hence allow fixed classes to be instantiated here iff nElements = 0. */
+		if ((nElements != 0)
+		 || (instSpec > 5 /* lastPointerFormat */)) {
+			return null;
+		}
+		numSlots = classFormat & ((1U << (fixedFieldsFieldWidth())) - 1);
+		fillValue = GIV(nilObj);
+
+	}
+	if (classIndex == 0) {
+		/* begin ensureBehaviorHash: */
+		assert(addressCouldBeClassObj(classObj));
+		flag("todo");
+		classIndex = (((hash = (long32At(classObj + 4)) & (identityHashHalfWordMask()))) != 0
+			? hash
+			: (objCouldBeClassObj(classObj)
+					? (((err = enterIntoClassTable(classObj))) != 0
+							? -err
+							: (long32At(classObj + 4)) & (identityHashHalfWordMask()))
+					: -PrimErrBadReceiver));
+		if (classIndex < 0) {
+			/* begin primitiveFailFor: */
+			GIV(primFailCode) = -classIndex;
+			return null;
+		}
+	}
+	if (numSlots > (0x10000000000LL)) {
+		/* begin primitiveFailFor: */
+		GIV(primFailCode) = PrimErrUnsupported;
+		return null;
+	}
+	newObj = allocateSlotsInOldSpacebytesformatclassIndex(numSlots, (numSlots == 0
+		? 8 /* allocationUnit */ + BaseHeaderSize
+		: (numSlots << (shiftForWord())) + ((numSlots >= (numSlotsMask())
+	? BaseHeaderSize + BaseHeaderSize
+	: BaseHeaderSize))), instSpec, classIndex);
+	if (!(newObj == null)) {
+		/* begin fillObj:numSlots:with: */
+		assert(oopisLessThan(((newObj + BaseHeaderSize) + (numSlots * BytesPerOop)) - 1, addressAfter(newObj)));
+		for (p = (((usqInt)(newObj + BaseHeaderSize))); p <= (((usqInt)(((newObj + BaseHeaderSize) + (numSlots * BytesPerOop)) - 1))); p += 8 /* allocationUnit */) {
+			longAtput(p, fillValue);
+		}
+		/* begin setIsPinnedOf:to: */
+		longAtput(newObj, (longAt(newObj)) | (1U << (pinnedBitShift())));
+	}
+	return newObj;
+}
+
+
+/*	Allocate an instance of a variable class, excepting CompiledMethod. */
+
 	/* Spur64BitMemoryManager>>#instantiateClass:indexableSize: */
 sqInt
 instantiateClassindexableSize(sqInt classObj, usqInt nElements)
@@ -41066,6 +41234,7 @@ instantiateUninitializedClassindexableSize(sqInt classObj, usqInt nElements)
 	classIndex = (long32At(classObj + 4)) & (identityHashHalfWordMask());
 	fillValue = 0;
 	flag("Todo");
+	assert(instSpec == (firstByteFormat()));
 	switch (instSpec) {
 	case 2 /* arrayFormat */:
 		numSlots = nElements;
@@ -65850,8 +66019,8 @@ static sqInt
 getErrorObjectFromPrimFailCode(void)
 {   DECL_MAYBE_SQ_GLOBAL_STRUCT
     sqInt classIndex;
-    sqInt clone;
-    sqInt errObj;
+    usqInt clone;
+    usqInt errObj;
     sqInt fieldIndex;
     sqInt i;
     usqInt newObj;

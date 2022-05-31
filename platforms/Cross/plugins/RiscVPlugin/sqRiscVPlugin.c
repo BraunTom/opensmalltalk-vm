@@ -61,6 +61,23 @@ void	(*prevInterruptCheckChain)() = 0;
 
 static host_callback callback; // we do not set any of the callbacks -> it is possible we get segfaults from this
 
+void print(host_callback *sd,
+           const char *fmt,
+           va_list ap) {
+    unsigned int *list = (unsigned int*)ap;
+    printf(fmt, list[0], list[1], list[2]);
+}
+
+void print_error(host_callback *sd,
+           const char *fmt,
+           va_list ap) {
+    printf("");
+}
+
+void flush_stdout(host_callback *sd) {
+
+}
+
 void *
 newCPU()
 {
@@ -73,6 +90,10 @@ newCPU()
 				(char *)&initialSimState.base - (char *)&initialSimState.regs[0]);
 		// lastCPU->base.engine.jmpbuf = error_abort;
 	}
+    lastCPU->callback->vprintf_filtered = print;
+    lastCPU->callback->evprintf_filtered = print;
+    lastCPU->callback->error = print_error;
+    lastCPU->callback->flush_stdout = flush_stdout;
 	return lastCPU->cpu[0];
 }
 

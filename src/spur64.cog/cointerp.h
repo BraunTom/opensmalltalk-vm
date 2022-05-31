@@ -149,6 +149,7 @@ extern sqInt fetchClassTagOf(sqInt oop);
 extern sqInt floatObjectOf(double aFloat);
 extern double floatValueOf(sqInt oop);
 extern sqInt headerIndicatesAlternateBytecodeSet(sqInt methodHeader);
+extern sqInt inOldSpaceInstantiatePinnedClassindexableSize(sqInt classObj, usqInt nElements);
 extern sqInt instantiateClassindexableSize(sqInt classObj, usqInt nElements);
 extern sqInt instantiateUninitializedClassindexableSize(sqInt classObj, usqInt nElements);
 extern sqInt isIntegerValue(sqInt intValue);

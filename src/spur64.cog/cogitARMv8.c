@@ -7276,7 +7276,7 @@ rewriteImm19JumpBeforetarget(AbstractInstruction * self_in_rewriteImm19JumpBefor
 static sqInt NoDbgRegParms
 rewriteImm26JumpBeforetarget(AbstractInstruction * self_in_rewriteImm26JumpBeforetarget, sqInt followingAddress, sqInt targetAddress)
 {
-    sqInt instrOpcode;
+    usqInt instrOpcode;
     sqInt mcpc;
     sqInt offset;
 
@@ -7286,7 +7286,7 @@ rewriteImm26JumpBeforetarget(AbstractInstruction * self_in_rewriteImm26JumpBefor
 	instrOpcode = ((instructionBeforeAddress(self_in_rewriteImm26JumpBeforetarget, followingAddress))) >> 26;
 	assert((instrOpcode == 5)
 	 || (instrOpcode == 37));
-	codeLong32Atput(mcpc, (((sqInt)((usqInt)(instrOpcode) << 26))) + (((offset) >> 2) & (0x3FFFFFF)));
+	codeLong32Atput(mcpc, (instrOpcode << 26) + (((offset) >> 2) & (0x3FFFFFF)));
 	return 4;
 }
 
@@ -12276,6 +12276,8 @@ generateClosedPICPrototype(void)
 		checkLiteral32forInstruction(3133021973U + h, genoperandoperand(opcode, 3133021973U + h, TempReg));
 		/* begin JumpLongZero: */
 		jumpTarget = ((((methodZoneBase + (youngReferrers())) / 2) - 13262352) + 13262352) + (h * 16);
+		if (jumpTarget == 533776) {
+		}
 		genConditionalBranchoperand(JumpLongZero, ((sqInt)jumpTarget));
 		if (h == 1) {
 			endCPICCase1 = genoperandoperand(Label, (labelCounter += 1), bytecodePC);
