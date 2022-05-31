@@ -1,6 +1,8 @@
 GDBBUILDFOLDER	= ../../../riscv
 GDBSOURCEFOLDER	= ../../../../../processors/riscv/gdb-12.1
 
+XCFLAGS += -DWITH_TARGET_WORD_BITSIZE=64
+
 XINCLUDES	+= -I$(GDBSOURCEFOLDER)/include
 XINCLUDES	+= -I$(GDBSOURCEFOLDER)/opcodes
 XINCLUDES	+= -I$(GDBSOURCEFOLDER)/sim/riscv
