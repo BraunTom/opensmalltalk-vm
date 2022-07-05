@@ -115,7 +115,9 @@ static inline long
 runOnCPU(sim_cpu *cpu, void *memory,
 		uintptr_t byteSize, uintptr_t minAddr, uintptr_t minWriteMaxExecAddr, int runOrStep)
 {
-    cpu->base.core.common.map[2].first->buffer = memory;
+    cpu->base.core.common.map[0].first->buffer = memory; // read
+    cpu->base.core.common.map[1].first->buffer = memory; // write
+    cpu->base.core.common.map[2].first->buffer = memory; // exec
     // + 4 as we assume instructions are always 4 byte
 	uint64_t postpc = cpu->pc + 4;
 
@@ -133,9 +135,9 @@ runOnCPU(sim_cpu *cpu, void *memory,
 
 	if (runOrStep == step) {
         if(postpc <= minWriteMaxExecAddr) { step_once(cpu); }
-		if (cpu->pc + 4 <= minWriteMaxExecAddr) {
-			cpu->pc = cpu->pc + 4;
-		}
+		/* if (cpu->pc + 4 <= minWriteMaxExecAddr) { */
+		/*   cpu->pc = cpu->pc + 4; */
+		/* } */
 	}
 	else {
         while(!gdblog_index) {
@@ -146,15 +148,18 @@ runOnCPU(sim_cpu *cpu, void *memory,
             }
             if(!gdblog_index) {break;}
 
-            if (cpu->pc + 4 <= minWriteMaxExecAddr)
-                cpu->pc = cpu->pc + 4;
-            postpc = cpu->pc + 4 + 4;
+            /* if (cpu->pc + 4 <= minWriteMaxExecAddr) */
+            /*     cpu->pc = cpu->pc + 4; */
+            /* postpc = cpu->pc + 4 + 4; */
+            postpc = cpu->pc + 4;
         }
 
 
 	}
-	if (postpc > minWriteMaxExecAddr
-	 || cpu->pc + 4 > minWriteMaxExecAddr)
+	/* if (postpc > minWriteMaxExecAddr */
+	/*  || cpu->pc + 4 > minWriteMaxExecAddr) */
+	/*   return InstructionPrefetchError; */
+	if (postpc > minWriteMaxExecAddr)
 		return InstructionPrefetchError;
 
 #if 0

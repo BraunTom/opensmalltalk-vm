@@ -1,4 +1,4 @@
-GDBBUILDFOLDER	= ../../../riscv
+GDBBUILDFOLDER	= ../../../riscv/
 GDBSOURCEFOLDER	= ../../../../../processors/riscv/gdb-12.1
 
 XCFLAGS += -DWITH_TARGET_WORD_BITSIZE=64

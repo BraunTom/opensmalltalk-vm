@@ -3,5 +3,4 @@ Building the RiscVPlugin
 
 In the build dirctory for the platform (e.g. building/linux64x64 for 64-bit linux)
 locate the riscv directory.  In that directory use the makeem script, which
-invokes conf.COG, to configure and build the gdb-derived simulator for ARMv8/
-ARM64.  Then build a VM that has GdbARMv8Plugin in its plugins.ext.
+invokes conf.COG, to configure and build the gdb-derived simulator for Risc-V.  Then build a VM that has RiscVPlugin in its plugins.ext.
